@@ -1,0 +1,30 @@
+# Build
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Maven
+dependency-reduced-pom.xml
+
+# Datenbank
+*.mv.db
+*.lock.db
+*.trace.db
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup
+src_backup/
