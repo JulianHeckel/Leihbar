@@ -1,31 +1,29 @@
 package de.dhbw.leihbar.domain.valueobjects;
 
 /**
- * Enum: Kategorie (Gegenstandskategorie)
- *
- * Einfaches Enum fuer die Kategorisierung von Gegenstaenden.
- * Jede Kategorie hat eine menschenlesbare Bezeichnung.
- *
- * Geplante Werte:
- * - WERKZEUG ("Werkzeug")
- * - ELEKTRONIK ("Elektronik")
- * - BUECHER ("Buecher")
- * - SPORT ("Sport")
- * - SONSTIGES ("Sonstiges")
- *
- * Wird von Gegenstand als Typ-Attribut verwendet.
- *
- * UEBERLEGUNG: Spaeter vielleicht eigene Klasse statt Enum?
- * -> Dann koennte man z.B. maximale Ausleihdauer pro Kategorie festlegen
- * -> Erstmal als Enum, ist einfacher
- *
- * TODO: Enum-Konstanten mit Bezeichnung
- * TODO: Konstruktor, Getter, toString
+ * Enum fuer die Kategorie eines Gegenstandes.
+ * PRE-REFACTORING: Wird spaeter zu einer Klasse mit Factory-Methoden und maxAusleihdauer.
  */
 public enum Kategorie {
-    // TODO: WERKZEUG("Werkzeug"),
-    // TODO: ELEKTRONIK("Elektronik"),
-    // TODO: BUECHER("Buecher"),
-    // TODO: SPORT("Sport"),
-    // TODO: SONSTIGES("Sonstiges");
+
+    WERKZEUG("Werkzeug"),
+    ELEKTRONIK("Elektronik"),
+    BUECHER("Buecher"),
+    SPORT("Sport"),
+    SONSTIGES("Sonstiges");
+
+    private final String bezeichnung;
+
+    Kategorie(String bezeichnung) {
+        this.bezeichnung = bezeichnung;
+    }
+
+    public String getBezeichnung() {
+        return bezeichnung;
+    }
+
+    @Override
+    public String toString() {
+        return bezeichnung;
+    }
 }
