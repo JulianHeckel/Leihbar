@@ -1,74 +1,111 @@
 package de.dhbw.leihbar.domain.entities;
 
+import de.dhbw.leihbar.domain.valueobjects.Kontaktdaten;
+
+import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Entity: Ausleiher (Person die Gegenstände ausleiht)
- *
- * Repräsentiert eine Person im System, die Gegenstände ausleihen kann.
- * Als Entity wird die Gleichheit über die ID bestimmt, nicht über die Attribute.
- *
- * === Geplante Felder ===
- * - id: UUID                     -> Eindeutige Identität
- * - vorname: String              -> Vorname der Person
- * - nachname: String             -> Nachname der Person
- * - kontaktdaten: Kontaktdaten   -> Value Object mit Email + Telefon
- *
- * === Geplante Methoden ===
- * - static neu(vorname, nachname, kontaktdaten): Ausleiher
- *      Factory Method für neue Ausleiher
- *      Generiert UUID automatisch
- *
- * - getVollstaendigerName(): String
- *      Gibt "Vorname Nachname" zurück
- *      Convenience-Methode für UI-Anzeige
- *
- * - setVorname(String): void
- *      Mit Validierung: nicht null/leer
- *
- * - setNachname(String): void
- *      Mit Validierung: nicht null/leer
- *
- * - setKontaktdaten(Kontaktdaten): void
- *      Mit Validierung: nicht null
- *
- * === Unterschied Entity vs. Value Object ===
- * Entity:
- * - Hat eine Identität (UUID)
- * - Gleichheit über ID
- * - Kann sich verändern (Name, Kontaktdaten änderbar)
- * - Lebenszyklus (wird erstellt, geändert, ggf. gelöscht)
- *
- * Value Object (zum Vergleich):
- * - Keine eigene Identität
- * - Gleichheit über alle Attribute
- * - Immutable (nicht veränderbar)
- * - Wird komplett ersetzt statt geändert
- *
- * === Invarianten ===
- * - Vorname und Nachname dürfen nicht null oder leer sein
- * - Kontaktdaten müssen gültig sein (Validierung im Kontaktdaten-VO)
- * - ID wird einmal vergeben und ändert sich nie
- *
- * === Gleichheit ===
- * - equals/hashCode basierend auf id (Entity-Semantik)
+ * Entity fuer eine Person, die Gegenstaende ausleihen kann.
+ * PRE-REFACTORING: getVollstaendigerName() wird spaeter zu getVollerName().
+ * mitId() Factory wird entfernt zugunsten des direkten Konstruktors.
  */
 public class Ausleiher {
 
-    // TODO: Felder definieren
-    // private UUID id;
-    // private String vorname;
-    // private String nachname;
-    // private Kontaktdaten kontaktdaten;
+    private final UUID id;
+    private String vorname;
+    private String nachname;
+    private Kontaktdaten kontaktdaten;
 
-    // TODO: Privater Konstruktor + Factory Method neu()
-    // TODO: Zweiter Konstruktor für DB-Rekonstruktion (mit bestehender ID)
+    public Ausleiher(UUID id, String vorname, String nachname, Kontaktdaten kontaktdaten) {
+        this.id = Objects.requireNonNull(id, "ID darf nicht null sein");
+        setVorname(vorname);
+        setNachname(nachname);
+        setKontaktdaten(kontaktdaten);
+    }
 
-    // TODO: getVollstaendigerName() -> "Vorname Nachname"
+    /**
+     * Factory-Methode zur Erzeugung eines neuen Ausleihers mit generierter ID.
+     */
+    public static Ausleiher neu(String vorname, String nachname, Kontaktdaten kontaktdaten) {
+        return new Ausleiher(UUID.randomUUID(), vorname, nachname, kontaktdaten);
+    }
 
-    // TODO: Setter mit Validierung
+    /**
+     * Factory-Methode fuer DB-Rekonstruktion mit bestehender ID.
+     * PRE-REFACTORING: Wird spaeter entfernt (direkter Konstruktor stattdessen).
+     */
+    public static Ausleiher mitId(UUID id, String vorname, String nachname, Kontaktdaten kontaktdaten) {
+        return new Ausleiher(id, vorname, nachname, kontaktdaten);
+    }
 
-    // TODO: Getter
+    public UUID getId() {
+        return id;
+    }
 
-    // TODO: equals/hashCode über id
+    public String getVorname() {
+        return vorname;
+    }
+
+    public void setVorname(String vorname) {
+        Objects.requireNonNull(vorname, "Vorname darf nicht null sein");
+        String normalized = vorname.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("Vorname darf nicht leer sein");
+        }
+        if (normalized.length() > 100) {
+            throw new IllegalArgumentException("Vorname darf maximal 100 Zeichen haben");
+        }
+        this.vorname = normalized;
+    }
+
+    public String getNachname() {
+        return nachname;
+    }
+
+    public void setNachname(String nachname) {
+        Objects.requireNonNull(nachname, "Nachname darf nicht null sein");
+        String normalized = nachname.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("Nachname darf nicht leer sein");
+        }
+        if (normalized.length() > 100) {
+            throw new IllegalArgumentException("Nachname darf maximal 100 Zeichen haben");
+        }
+        this.nachname = normalized;
+    }
+
+    public Kontaktdaten getKontaktdaten() {
+        return kontaktdaten;
+    }
+
+    public void setKontaktdaten(Kontaktdaten kontaktdaten) {
+        this.kontaktdaten = Objects.requireNonNull(kontaktdaten, "Kontaktdaten duerfen nicht null sein");
+    }
+
+    /**
+     * Gibt den vollstaendigen Namen zurueck.
+     * PRE-REFACTORING: Wird spaeter zu getVollerName() umbenannt.
+     */
+    public String getVollstaendigerName() {
+        return vorname + " " + nachname;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Ausleiher ausleiher = (Ausleiher) o;
+        return id.equals(ausleiher.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return getVollstaendigerName() + " (" + kontaktdaten.getEmail() + ")";
+    }
 }
