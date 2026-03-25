@@ -1,99 +1,193 @@
 package de.dhbw.leihbar.domain.aggregates;
 
+import de.dhbw.leihbar.domain.valueobjects.AusleiheStatus;
+import de.dhbw.leihbar.domain.valueobjects.Zeitraum;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Aggregate: Ausleihe (ein Ausleih-Vorgang)
- *
- * Repräsentiert den Vorgang, dass ein Ausleiher einen Gegenstand für
- * einen bestimmten Zeitraum ausleiht. Verwaltet den Lebenszyklus
- * einer Ausleihe von der Erstellung bis zur Rückgabe.
- *
- * === Geplante Felder ===
- * - id: UUID                              -> Eindeutige Identität
- * - gegenstandId: UUID                    -> Referenz auf Gegenstand (über ID, nicht Objekt!)
- *      Hinweis: Aggregates referenzieren einander NUR über IDs,
- *      nicht über direkte Objektreferenzen (DDD-Prinzip)
- * - ausleiherId: UUID                     -> Referenz auf Ausleiher
- * - ausleihdatum: LocalDate               -> Wann wurde ausgeliehen
- * - geplantesRueckgabedatum: LocalDate    -> Wann soll zurückgegeben werden
- * - tatsaechlichesRueckgabedatum: LocalDate -> Wann wurde tatsächlich zurückgegeben (nullable)
- * - status: AusleiheStatus                -> AKTIV, ZURUECKGEGEBEN, UEBERFAELLIG, STORNIERT
- * - zustandsbericht: String               -> Optionaler Bericht bei Rückgabe
- * - erstelltAm: LocalDateTime             -> Zeitstempel der Erstellung
- *
- * === Geplanter Konstruktor ===
- * public Ausleihe(UUID gegenstandId, UUID ausleiherId,
- *                 LocalDate ausleihdatum, LocalDate geplantesRueckgabedatum,
- *                 String notiz)
- *
- * HINWEIS: Das sind viele Parameter... Wenn es zu unübersichtlich wird,
- * evtl. Builder Pattern in Betracht ziehen?
- * Erstmal so implementieren und schauen ob es handhabbar bleibt.
- *
- * === Geplante Methoden ===
- * - zurueckgeben(String zustandsbericht): void
- *      - Setzt tatsaechlichesRueckgabedatum auf heute
- *      - Speichert Zustandsbericht
- *      - Status -> ZURUECKGEGEBEN
- *      - Vorbedingung: istAktiv() == true
- *
- * - stornieren(): void
- *      - Status -> STORNIERT
- *      - Vorbedingung: istAktiv() == true
- *      - Anwendungsfall: Fehlerhafte Ausleihe, Gegenstand defekt etc.
- *
- * - aktualisiereUeberfaelligkeitsstatus(): void
- *      - Prüft ob geplantesRueckgabedatum überschritten
- *      - Falls ja und Status == AKTIV: Status -> UEBERFAELLIG
- *      - Wird regelmäßig vom UeberfaelligkeitService aufgerufen
- *
- * - istAktiv(): boolean
- *      - true wenn status == AKTIV oder UEBERFAELLIG
- *      - (beides bedeutet: Gegenstand ist noch draußen)
- *
- * - istUeberfaellig(): boolean
- *      - Prüft ob Rückgabedatum überschritten UND noch nicht zurückgegeben
- *
- * - getUeberfaelligeTage(): long
- *      - Anzahl Tage über dem geplanten Rückgabedatum
- *      - 0 wenn nicht überfällig
- *
- * - getZeitraum(): Zeitraum
- *      - Gibt den geplanten Ausleihzeitraum als Value Object zurück
- *
- * - getZustandsbericht(): Optional<String>
- *      - Optionaler Zustandsbericht nach Rückgabe
- *
- * === Invarianten ===
- * - gegenstandId und ausleiherId dürfen nicht null sein
- * - geplantesRueckgabedatum muss nach ausleihdatum liegen
- * - Rückgabe und Stornierung nur bei aktiven Ausleihen möglich
- * - Nach Rückgabe/Stornierung sind keine weiteren Statusänderungen erlaubt
- *
- * === Domain Events (geplant) ===
- * - AusleiheErstelltEvent: Nach Erstellung einer neuen Ausleihe
- * - AusleiheZurueckgegebenEvent: Nach erfolgreicher Rückgabe
- * -> Events als Java Records implementieren
- *
- * === Gleichheit ===
- * - equals/hashCode über id
+ * Aggregate Root fuer eine Ausleihe.
+ * PRE-REFACTORING:
+ * - Langer Konstruktor statt Builder Pattern (Code Smell: Long Parameter List)
+ * - getZeitraum() -> wird spaeter zu getGeplanterZeitraum()
+ * - getZustandsbericht() gibt Optional zurueck -> wird spaeter nullable String
  */
 public class Ausleihe {
 
-    // TODO: Felder definieren (siehe oben)
+    private final UUID id;
+    private final UUID gegenstandId;
+    private final UUID ausleiherId;
+    private final Zeitraum zeitraum;
+    private final LocalDateTime erstelltAm;
 
-    // TODO: Konstruktor mit Validierung
-    // Ausleihe(UUID gegenstandId, UUID ausleiherId, LocalDate start, LocalDate ende, String notiz)
-    // - Alle Pflichtfelder prüfen (requireNonNull)
-    // - Ende nach Start prüfen
-    // - ID generieren
-    // - Status auf AKTIV setzen
-    // - erstelltAm auf jetzt setzen
+    private AusleiheStatus status;
+    private LocalDate tatsaechlichesRueckgabedatum;
+    private String zustandsbericht;
 
-    // TODO: Zweiter Konstruktor für DB-Rekonstruktion (mit bestehender ID und Status)
+    /**
+     * Konstruktor fuer neue Ausleihe.
+     * PRE-REFACTORING: Langer Konstruktor, wird spaeter durch Builder ersetzt.
+     */
+    public Ausleihe(UUID gegenstandId, UUID ausleiherId,
+                    LocalDate ausleihdatum, LocalDate geplantesRueckgabedatum) {
+        this.id = UUID.randomUUID();
+        this.gegenstandId = Objects.requireNonNull(gegenstandId, "GegenstandId darf nicht null sein");
+        this.ausleiherId = Objects.requireNonNull(ausleiherId, "AusleiherId darf nicht null sein");
+        Objects.requireNonNull(ausleihdatum, "Ausleihdatum darf nicht null sein");
+        Objects.requireNonNull(geplantesRueckgabedatum, "Rueckgabedatum darf nicht null sein");
+        this.zeitraum = new Zeitraum(ausleihdatum, geplantesRueckgabedatum);
+        this.erstelltAm = LocalDateTime.now();
+        this.status = AusleiheStatus.AKTIV;
+        this.tatsaechlichesRueckgabedatum = null;
+        this.zustandsbericht = null;
+    }
 
-    // TODO: Methoden implementieren (siehe Javadoc oben)
+    /**
+     * Konstruktor fuer die Wiederherstellung aus der Datenbank.
+     */
+    public Ausleihe(UUID id, UUID gegenstandId, UUID ausleiherId, Zeitraum zeitraum,
+                    LocalDateTime erstelltAm, AusleiheStatus status,
+                    LocalDate tatsaechlichesRueckgabedatum, String zustandsbericht) {
+        this.id = Objects.requireNonNull(id);
+        this.gegenstandId = Objects.requireNonNull(gegenstandId);
+        this.ausleiherId = Objects.requireNonNull(ausleiherId);
+        this.zeitraum = Objects.requireNonNull(zeitraum);
+        this.erstelltAm = Objects.requireNonNull(erstelltAm);
+        this.status = Objects.requireNonNull(status);
+        this.tatsaechlichesRueckgabedatum = tatsaechlichesRueckgabedatum;
+        this.zustandsbericht = zustandsbericht;
+    }
 
-    // TODO: equals/hashCode über id
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getGegenstandId() {
+        return gegenstandId;
+    }
+
+    public UUID getAusleiherId() {
+        return ausleiherId;
+    }
+
+    /**
+     * PRE-REFACTORING: Wird spaeter zu getGeplanterZeitraum() umbenannt.
+     */
+    public Zeitraum getZeitraum() {
+        return zeitraum;
+    }
+
+    public LocalDate getAusleihdatum() {
+        return zeitraum.getStartdatum();
+    }
+
+    public LocalDate getGeplantesRueckgabedatum() {
+        return zeitraum.getEnddatum();
+    }
+
+    public LocalDateTime getErstelltAm() {
+        return erstelltAm;
+    }
+
+    public AusleiheStatus getStatus() {
+        return status;
+    }
+
+    public LocalDate getTatsaechlichesRueckgabedatum() {
+        return tatsaechlichesRueckgabedatum;
+    }
+
+    /**
+     * PRE-REFACTORING: Gibt Optional zurueck, wird spaeter zu nullable String.
+     */
+    public Optional<String> getZustandsbericht() {
+        return Optional.ofNullable(zustandsbericht);
+    }
+
+    /**
+     * Prueft, ob die Ausleihe noch aktiv ist.
+     */
+    public boolean istAktiv() {
+        return status.istAktiv();
+    }
+
+    /**
+     * Prueft, ob die Ausleihe ueberfaellig ist.
+     */
+    public boolean istUeberfaellig() {
+        return istAktiv() && zeitraum.istUeberfaellig();
+    }
+
+    /**
+     * Gibt die Anzahl der ueberfaelligen Tage zurueck.
+     */
+    public long getUeberfaelligeTage() {
+        if (!istAktiv()) {
+            return 0;
+        }
+        return zeitraum.getUeberfaelligeTage();
+    }
+
+    /**
+     * Aktualisiert den Status auf UEBERFAELLIG.
+     */
+    public void aktualisiereUeberfaelligkeitsstatus() {
+        if (status == AusleiheStatus.AKTIV && zeitraum.istUeberfaellig()) {
+            this.status = AusleiheStatus.UEBERFAELLIG;
+        }
+    }
+
+    /**
+     * Erfasst die Rueckgabe des ausgeliehenen Gegenstandes.
+     */
+    public void zurueckgeben(String zustandsbericht) {
+        if (!istAktiv()) {
+            throw new IllegalStateException(
+                "Ausleihe kann nicht zurueckgegeben werden. Aktueller Status: " + status
+            );
+        }
+        this.tatsaechlichesRueckgabedatum = LocalDate.now();
+        this.zustandsbericht = zustandsbericht;
+        this.status = AusleiheStatus.ZURUECKGEGEBEN;
+    }
+
+    /**
+     * Storniert die Ausleihe.
+     */
+    public void stornieren() {
+        if (!istAktiv()) {
+            throw new IllegalStateException(
+                "Ausleihe kann nicht storniert werden. Aktueller Status: " + status
+            );
+        }
+        this.status = AusleiheStatus.STORNIERT;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Ausleihe ausleihe = (Ausleihe) o;
+        return id.equals(ausleihe.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "Ausleihe{" +
+               "id=" + id +
+               ", gegenstandId=" + gegenstandId +
+               ", ausleiherId=" + ausleiherId +
+               ", zeitraum=" + zeitraum +
+               ", status=" + status +
+               '}';
+    }
 }
