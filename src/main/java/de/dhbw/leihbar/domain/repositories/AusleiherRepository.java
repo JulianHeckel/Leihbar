@@ -1,23 +1,54 @@
 package de.dhbw.leihbar.domain.repositories;
 
+import de.dhbw.leihbar.domain.entities.Ausleiher;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 /**
- * Repository Interface: AusleiherRepository
- *
- * Datenzugriff fuer Ausleiher (Personen). Liegt in der Domain-Schicht.
- *
- * Geplante Methoden:
- * - speichern(Ausleiher): Ausleiher
- * - findeNachId(UUID): Optional<Ausleiher>
- * - findeAlle(): List<Ausleiher>
- * - findeNachEmail(String): Optional<Ausleiher>  -> Email ist eindeutig
- * - suche(String): List<Ausleiher>               -> Suche in Name/Email
- * - existiertEmail(String): boolean               -> Duplikat-Pruefung
- * - loeschen(UUID): void
- * - zaehleAlle(): long
- *
- * TODO: Interface-Methoden definieren
+ * Repository-Interface für Ausleiher.
+ * Definiert die Schnittstelle für den Datenzugriff in der Domänensprache.
  */
 public interface AusleiherRepository {
-    // TODO: CRUD-Methoden
-    // TODO: Email-basierte Queries
+
+    /**
+     * Speichert einen Ausleiher (neu oder aktualisiert).
+     */
+    Ausleiher speichern(Ausleiher ausleiher);
+
+    /**
+     * Findet einen Ausleiher anhand seiner ID.
+     */
+    Optional<Ausleiher> findeNachId(UUID id);
+
+    /**
+     * Findet einen Ausleiher anhand seiner E-Mail-Adresse.
+     */
+    Optional<Ausleiher> findeNachEmail(String email);
+
+    /**
+     * Gibt alle Ausleiher zurück.
+     */
+    List<Ausleiher> findeAlle();
+
+    /**
+     * Sucht Ausleiher anhand eines Suchbegriffs (Name oder E-Mail).
+     */
+    List<Ausleiher> suche(String suchbegriff);
+
+    /**
+     * Löscht einen Ausleiher.
+     */
+    void loeschen(UUID id);
+
+    /**
+     * Prüft, ob eine E-Mail-Adresse bereits existiert.
+     */
+    boolean existiertEmail(String email);
+
+    /**
+     * Zählt alle Ausleiher.
+     */
+    long zaehleAlle();
 }

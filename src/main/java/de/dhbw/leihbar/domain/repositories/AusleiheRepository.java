@@ -1,27 +1,80 @@
 package de.dhbw.leihbar.domain.repositories;
 
+import de.dhbw.leihbar.domain.aggregates.Ausleihe;
+import de.dhbw.leihbar.domain.valueobjects.AusleiheStatus;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 /**
- * Repository Interface: AusleiheRepository
- *
- * Datenzugriff fuer Ausleihen. Liegt in der Domain-Schicht.
- *
- * Geplante Methoden:
- * - speichern(Ausleihe): Ausleihe
- * - findeNachId(UUID): Optional<Ausleihe>
- * - findeAlle(): List<Ausleihe>
- * - findeAktive(): List<Ausleihe>            -> Nur laufende Ausleihen
- * - findeUeberfaellige(): List<Ausleihe>     -> Ueberfaellige Ausleihen
- * - findeNachGegenstandId(UUID): List<Ausleihe>  -> Historie eines Gegenstands
- * - findeNachAusleiherId(UUID): List<Ausleihe>   -> Ausleihen einer Person
- * - findeAktiveAusleiheVonGegenstand(UUID): Optional<Ausleihe>
- * - loeschen(UUID): void
- * - zaehleAlle(): long
- * - zaehleUeberfaellige(): long
- *
- * TODO: Interface-Methoden definieren
+ * Repository-Interface für Ausleihen.
+ * Definiert die Schnittstelle für den Datenzugriff in der Domänensprache.
  */
 public interface AusleiheRepository {
-    // TODO: CRUD-Methoden
-    // TODO: Status-basierte Queries
-    // TODO: Beziehungs-Queries (nach Gegenstand, nach Ausleiher)
+
+    /**
+     * Speichert eine Ausleihe (neu oder aktualisiert).
+     */
+    Ausleihe speichern(Ausleihe ausleihe);
+
+    /**
+     * Findet eine Ausleihe anhand ihrer ID.
+     */
+    Optional<Ausleihe> findeNachId(UUID id);
+
+    /**
+     * Gibt alle Ausleihen zurück.
+     */
+    List<Ausleihe> findeAlle();
+
+    /**
+     * Findet alle Ausleihen mit einem bestimmten Status.
+     */
+    List<Ausleihe> findeNachStatus(AusleiheStatus status);
+
+    /**
+     * Findet alle aktiven Ausleihen (AKTIV oder UEBERFAELLIG).
+     */
+    List<Ausleihe> findeAktive();
+
+    /**
+     * Findet alle überfälligen Ausleihen.
+     */
+    List<Ausleihe> findeUeberfaellige();
+
+    /**
+     * Findet alle Ausleihen für einen bestimmten Gegenstand.
+     */
+    List<Ausleihe> findeNachGegenstandId(UUID gegenstandId);
+
+    /**
+     * Findet alle Ausleihen eines bestimmten Ausleihers.
+     */
+    List<Ausleihe> findeNachAusleiherId(UUID ausleiherId);
+
+    /**
+     * Findet die aktuelle aktive Ausleihe für einen Gegenstand (falls vorhanden).
+     */
+    Optional<Ausleihe> findeAktiveAusleiheVonGegenstand(UUID gegenstandId);
+
+    /**
+     * Löscht eine Ausleihe.
+     */
+    void loeschen(UUID id);
+
+    /**
+     * Zählt alle Ausleihen.
+     */
+    long zaehleAlle();
+
+    /**
+     * Zählt alle Ausleihen mit einem bestimmten Status.
+     */
+    long zaehleNachStatus(AusleiheStatus status);
+
+    /**
+     * Zählt überfällige Ausleihen.
+     */
+    long zaehleUeberfaellige();
 }
