@@ -1,13 +1,13 @@
 package de.dhbw.leihbar.domain.valueobjects;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
- * Value Object fuer Kontaktdaten einer Person.
- * PRE-REFACTORING: getTelefon() gibt Optional zurueck.
- * Spaeter wird das zu hatTelefon() + nullable getTelefon() geaendert.
+ * Value Object für Kontaktdaten einer Person.
+ * Enthält E-Mail und optional Telefonnummer.
+ *
+ * Immutable, selbstvalidierend, Gleichheit über Wert.
  */
 public final class Kontaktdaten {
 
@@ -27,13 +27,13 @@ public final class Kontaktdaten {
 
         String normalizedEmail = email.trim().toLowerCase();
         if (!EMAIL_PATTERN.matcher(normalizedEmail).matches()) {
-            throw new IllegalArgumentException("Ungueltiges E-Mail-Format: " + email);
+            throw new IllegalArgumentException("Ungültiges E-Mail-Format: " + email);
         }
 
         if (telefon != null && !telefon.isBlank()) {
             String normalizedTelefon = telefon.trim();
             if (!TELEFON_PATTERN.matcher(normalizedTelefon).matches()) {
-                throw new IllegalArgumentException("Ungueltiges Telefonnummer-Format: " + telefon);
+                throw new IllegalArgumentException("Ungültiges Telefonnummer-Format: " + telefon);
             }
             this.telefon = normalizedTelefon;
         } else {
@@ -61,16 +61,16 @@ public final class Kontaktdaten {
         return email;
     }
 
-    /**
-     * Gibt die Telefonnummer als Optional zurueck.
-     * PRE-REFACTORING: Wird spaeter zu direktem String + hatTelefon().
-     */
-    public Optional<String> getTelefon() {
-        return Optional.ofNullable(telefon);
+    public String getTelefon() {
+        return telefon;
+    }
+
+    public boolean hatTelefon() {
+        return telefon != null;
     }
 
     /**
-     * Gibt eine formatierte Darstellung der Kontaktdaten zurueck.
+     * Gibt eine formatierte Darstellung der Kontaktdaten zurück.
      */
     public String formatiert() {
         if (telefon != null) {

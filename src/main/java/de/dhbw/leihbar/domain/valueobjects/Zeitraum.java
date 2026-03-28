@@ -5,31 +5,32 @@ import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 /**
- * Value Object fuer einen Zeitraum mit Start- und Enddatum.
- * PRE-REFACTORING: getStartdatum/getEnddatum werden spaeter zu getVon/getBis.
- * ueberschneidetSich() wird zu ueberschneidetSichMit().
+ * Value Object für einen Zeitraum mit Start- und Enddatum.
+ * Wird für Ausleihen verwendet.
+ *
+ * Immutable, selbstvalidierend, Gleichheit über Wert.
  */
 public final class Zeitraum {
 
-    private final LocalDate startdatum;
-    private final LocalDate enddatum;
+    private final LocalDate von;
+    private final LocalDate bis;
 
-    public Zeitraum(LocalDate startdatum, LocalDate enddatum) {
-        Objects.requireNonNull(startdatum, "Startdatum darf nicht null sein");
-        Objects.requireNonNull(enddatum, "Enddatum darf nicht null sein");
+    public Zeitraum(LocalDate von, LocalDate bis) {
+        Objects.requireNonNull(von, "Startdatum darf nicht null sein");
+        Objects.requireNonNull(bis, "Enddatum darf nicht null sein");
 
-        if (enddatum.isBefore(startdatum)) {
+        if (bis.isBefore(von)) {
             throw new IllegalArgumentException(
-                "Enddatum (" + enddatum + ") darf nicht vor dem Startdatum (" + startdatum + ") liegen"
+                "Enddatum (" + bis + ") darf nicht vor dem Startdatum (" + von + ") liegen"
             );
         }
 
-        this.startdatum = startdatum;
-        this.enddatum = enddatum;
+        this.von = von;
+        this.bis = bis;
     }
 
     /**
-     * Factory-Methode fuer einen Zeitraum ab heute.
+     * Factory-Methode für einen Zeitraum ab heute.
      */
     public static Zeitraum abHeute(int tage) {
         if (tage < 0) {
@@ -40,7 +41,7 @@ public final class Zeitraum {
     }
 
     /**
-     * Factory-Methode fuer einen Zeitraum ab einem bestimmten Datum.
+     * Factory-Methode für einen Zeitraum ab einem bestimmten Datum.
      */
     public static Zeitraum ab(LocalDate start, int tage) {
         Objects.requireNonNull(start, "Startdatum darf nicht null sein");
@@ -50,53 +51,54 @@ public final class Zeitraum {
         return new Zeitraum(start, start.plusDays(tage));
     }
 
-    public LocalDate getStartdatum() {
-        return startdatum;
+    public LocalDate getVon() {
+        return von;
     }
 
-    public LocalDate getEnddatum() {
-        return enddatum;
+    public LocalDate getBis() {
+        return bis;
     }
 
     /**
      * Berechnet die Dauer des Zeitraums in Tagen.
      */
     public long getDauerInTagen() {
-        return ChronoUnit.DAYS.between(startdatum, enddatum);
+        return ChronoUnit.DAYS.between(von, bis);
     }
 
     /**
-     * Prueft, ob ein Datum innerhalb des Zeitraums liegt.
+     * Prüft, ob ein Datum innerhalb des Zeitraums liegt.
      */
     public boolean enthaelt(LocalDate datum) {
         Objects.requireNonNull(datum, "Datum darf nicht null sein");
-        return !datum.isBefore(startdatum) && !datum.isAfter(enddatum);
+        return !datum.isBefore(von) && !datum.isAfter(bis);
     }
 
     /**
-     * Prueft, ob das Enddatum ueberschritten ist.
+     * Prüft, ob das Enddatum überschritten ist.
      */
     public boolean istUeberfaellig() {
-        return LocalDate.now().isAfter(enddatum);
+        return LocalDate.now().isAfter(bis);
     }
 
     /**
-     * Berechnet die Anzahl der ueberfaelligen Tage.
+     * Berechnet die Anzahl der überfälligen Tage.
+     * Gibt 0 zurück, wenn nicht überfällig.
      */
     public long getUeberfaelligeTage() {
         LocalDate heute = LocalDate.now();
-        if (!heute.isAfter(enddatum)) {
+        if (!heute.isAfter(bis)) {
             return 0;
         }
-        return ChronoUnit.DAYS.between(enddatum, heute);
+        return ChronoUnit.DAYS.between(bis, heute);
     }
 
     /**
-     * Prueft, ob dieser Zeitraum sich mit einem anderen ueberschneidet.
+     * Prüft, ob dieser Zeitraum sich mit einem anderen überschneidet.
      */
-    public boolean ueberschneidetSich(Zeitraum anderer) {
+    public boolean ueberschneidetSichMit(Zeitraum anderer) {
         Objects.requireNonNull(anderer, "Vergleichs-Zeitraum darf nicht null sein");
-        return !this.enddatum.isBefore(anderer.startdatum) && !anderer.enddatum.isBefore(this.startdatum);
+        return !this.bis.isBefore(anderer.von) && !anderer.bis.isBefore(this.von);
     }
 
     @Override
@@ -104,16 +106,16 @@ public final class Zeitraum {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Zeitraum zeitraum = (Zeitraum) o;
-        return startdatum.equals(zeitraum.startdatum) && enddatum.equals(zeitraum.enddatum);
+        return von.equals(zeitraum.von) && bis.equals(zeitraum.bis);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(startdatum, enddatum);
+        return Objects.hash(von, bis);
     }
 
     @Override
     public String toString() {
-        return startdatum + " bis " + enddatum + " (" + getDauerInTagen() + " Tage)";
+        return von + " bis " + bis + " (" + getDauerInTagen() + " Tage)";
     }
 }

@@ -6,9 +6,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Entity fuer eine Person, die Gegenstaende ausleihen kann.
- * PRE-REFACTORING: getVollstaendigerName() wird spaeter zu getVollerName().
- * mitId() Factory wird entfernt zugunsten des direkten Konstruktors.
+ * Entity für eine Person, die Gegenstände ausleihen kann.
+ * Identität wird über die eindeutige ID bestimmt.
  */
 public class Ausleiher {
 
@@ -29,14 +28,6 @@ public class Ausleiher {
      */
     public static Ausleiher neu(String vorname, String nachname, Kontaktdaten kontaktdaten) {
         return new Ausleiher(UUID.randomUUID(), vorname, nachname, kontaktdaten);
-    }
-
-    /**
-     * Factory-Methode fuer DB-Rekonstruktion mit bestehender ID.
-     * PRE-REFACTORING: Wird spaeter entfernt (direkter Konstruktor stattdessen).
-     */
-    public static Ausleiher mitId(UUID id, String vorname, String nachname, Kontaktdaten kontaktdaten) {
-        return new Ausleiher(id, vorname, nachname, kontaktdaten);
     }
 
     public UUID getId() {
@@ -80,14 +71,13 @@ public class Ausleiher {
     }
 
     public void setKontaktdaten(Kontaktdaten kontaktdaten) {
-        this.kontaktdaten = Objects.requireNonNull(kontaktdaten, "Kontaktdaten duerfen nicht null sein");
+        this.kontaktdaten = Objects.requireNonNull(kontaktdaten, "Kontaktdaten dürfen nicht null sein");
     }
 
     /**
-     * Gibt den vollstaendigen Namen zurueck.
-     * PRE-REFACTORING: Wird spaeter zu getVollerName() umbenannt.
+     * Gibt den vollständigen Namen zurück.
      */
-    public String getVollstaendigerName() {
+    public String getVollerName() {
         return vorname + " " + nachname;
     }
 
@@ -106,6 +96,6 @@ public class Ausleiher {
 
     @Override
     public String toString() {
-        return getVollstaendigerName() + " (" + kontaktdaten.getEmail() + ")";
+        return getVollerName() + " (" + kontaktdaten.getEmail() + ")";
     }
 }
