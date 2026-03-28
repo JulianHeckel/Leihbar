@@ -1,6 +1,7 @@
 package de.dhbw.leihbar.domain.repositories;
 
 import de.dhbw.leihbar.domain.aggregates.Gegenstand;
+import de.dhbw.leihbar.domain.valueobjects.InventarNummer;
 import de.dhbw.leihbar.domain.valueobjects.Kategorie;
 import de.dhbw.leihbar.domain.valueobjects.VerfuegbarkeitsStatus;
 
@@ -9,12 +10,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Repository-Interface fuer Gegenstaende.
- * PRE-REFACTORING: Ohne InventarNummer-spezifische Methoden.
- * Diese werden im Refactoring-Commit hinzugefuegt:
- * - findeNachInventarNummer(InventarNummer)
- * - existiertInventarNummer(InventarNummer)
- * - naechsteFreieInventarNummer()
+ * Repository-Interface für Gegenstände.
+ * Definiert die Schnittstelle für den Datenzugriff in der Domänensprache.
  */
 public interface GegenstandRepository {
 
@@ -29,42 +26,57 @@ public interface GegenstandRepository {
     Optional<Gegenstand> findeNachId(UUID id);
 
     /**
-     * Gibt alle Gegenstaende zurueck.
+     * Findet einen Gegenstand anhand seiner Inventarnummer.
+     */
+    Optional<Gegenstand> findeNachInventarNummer(InventarNummer inventarNummer);
+
+    /**
+     * Gibt alle Gegenstände zurück.
      */
     List<Gegenstand> findeAlle();
 
     /**
-     * Findet alle Gegenstaende mit einem bestimmten Status.
+     * Findet alle Gegenstände mit einem bestimmten Status.
      */
     List<Gegenstand> findeNachStatus(VerfuegbarkeitsStatus status);
 
     /**
-     * Findet alle verfuegbaren Gegenstaende.
+     * Findet alle verfügbaren Gegenstände (die ausgeliehen werden können).
      */
     List<Gegenstand> findeVerfuegbare();
 
     /**
-     * Findet alle Gegenstaende einer bestimmten Kategorie.
+     * Findet alle Gegenstände einer bestimmten Kategorie.
      */
     List<Gegenstand> findeNachKategorie(Kategorie kategorie);
 
     /**
-     * Sucht Gegenstaende anhand eines Suchbegriffs.
+     * Sucht Gegenstände anhand eines Suchbegriffs (Name oder Beschreibung).
      */
     List<Gegenstand> suche(String suchbegriff);
 
     /**
-     * Loescht einen Gegenstand.
+     * Löscht einen Gegenstand.
      */
     void loeschen(UUID id);
 
     /**
-     * Zaehlt alle Gegenstaende.
+     * Prüft, ob eine Inventarnummer bereits existiert.
+     */
+    boolean existiertInventarNummer(InventarNummer inventarNummer);
+
+    /**
+     * Ermittelt die nächste freie Inventarnummer.
+     */
+    InventarNummer naechsteFreieInventarNummer();
+
+    /**
+     * Zählt alle Gegenstände.
      */
     long zaehleAlle();
 
     /**
-     * Zaehlt alle Gegenstaende mit einem bestimmten Status.
+     * Zählt alle Gegenstände mit einem bestimmten Status.
      */
     long zaehleNachStatus(VerfuegbarkeitsStatus status);
 }
