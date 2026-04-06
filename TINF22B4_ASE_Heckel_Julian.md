@@ -2,7 +2,7 @@
 
 **Kurs:** TINF22B4
 **Student:** Julian Heckel
-**Prüfungsleistung:** Programmenentwurf - Advanced Software Engineering
+**Prüfungsleistung:** Programmentwurf - Advanced Software Engineering
 
 ---
 
@@ -883,7 +883,7 @@ public final class InventarNummer {
 ```
 
 **Begründung:**
-- Validierung ist gekappselt und zentral
+- Validierung ist gekapselt und zentral
 - Typsicherheit: Compiler verhindert Verwechslung
 - Self-Documenting Code: `InventarNummer` statt `String`
 - Gleichheitslogik ist korrekt implementiert
