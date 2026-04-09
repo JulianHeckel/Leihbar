@@ -33,9 +33,12 @@ public class MainView extends BorderPane {
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     // UI Komponenten
+    private TabPane tabPane;
     private TableView<Gegenstand> gegenstaendeTabelle;
     private TableView<Ausleiher> ausleiherTabelle;
     private TableView<Ausleihe> ausleihenTabelle;
+    private TableView<Ausleihe> ueberfaelligTabelle;
+    private HBox dashboardStatsBox;
     private Label statusLabel;
 
     public MainView(GegenstandService gegenstandService,
@@ -60,7 +63,7 @@ public class MainView extends BorderPane {
         setTop(header);
 
         // Tab-Pane
-        TabPane tabPane = new TabPane();
+        this.tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         Tab dashboardTab = new Tab("Dashboard", createDashboardPane());
@@ -70,6 +73,12 @@ public class MainView extends BorderPane {
         Tab ueberfaelligTab = new Tab("Überfällig", createUeberfaelligPane());
 
         tabPane.getTabs().addAll(dashboardTab, gegenstaendeTab, ausleiherTab, ausleihenTab, ueberfaelligTab);
+
+        // Daten beim Tab-Wechsel automatisch aktualisieren
+        tabPane.getSelectionModel().selectedItemProperty().addListener(
+            (obs, oldTab, newTab) -> refreshAllData()
+        );
+
         setCenter(tabPane);
 
         // Status Bar
@@ -88,29 +97,13 @@ public class MainView extends BorderPane {
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
         // Statistik-Karten
-        HBox statsBox = new HBox(20);
-        statsBox.getChildren().addAll(
-            createStatCard("Gegenstände", String.valueOf(gegenstandService.zaehleAlle()), "#4CAF50"),
-            createStatCard("Verfügbar", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.VERFUEGBAR)), "#2196F3"),
-            createStatCard("Ausgeliehen", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.AUSGELIEHEN)), "#FF9800"),
-            createStatCard("Überfällig", String.valueOf(ausleiheService.zaehleUeberfaellige()), "#f44336")
-        );
+        dashboardStatsBox = new HBox(20);
+        refreshDashboard();
 
         Button refreshButton = new Button("Aktualisieren");
-        refreshButton.setOnAction(e -> {
-            refreshAllData();
-            // Dashboard neu laden
-            ((VBox)((TabPane)getCenter()).getTabs().get(0).getContent()).getChildren().set(1,
-                new HBox(20,
-                    createStatCard("Gegenstände", String.valueOf(gegenstandService.zaehleAlle()), "#4CAF50"),
-                    createStatCard("Verfügbar", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.VERFUEGBAR)), "#2196F3"),
-                    createStatCard("Ausgeliehen", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.AUSGELIEHEN)), "#FF9800"),
-                    createStatCard("Überfällig", String.valueOf(ausleiheService.zaehleUeberfaellige()), "#f44336")
-                )
-            );
-        });
+        refreshButton.setOnAction(e -> refreshAllData());
 
-        pane.getChildren().addAll(titleLabel, statsBox, refreshButton);
+        pane.getChildren().addAll(titleLabel, dashboardStatsBox, refreshButton);
         return pane;
     }
 
@@ -401,7 +394,7 @@ public class MainView extends BorderPane {
         Label titleLabel = new Label("Überfällige Ausleihen");
         titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #f44336;");
 
-        TableView<Ausleihe> ueberfaelligTabelle = new TableView<>();
+        this.ueberfaelligTabelle = new TableView<>();
         ueberfaelligTabelle.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         TableColumn<Ausleihe, String> gegenstandCol = new TableColumn<>("Gegenstand");
@@ -425,10 +418,6 @@ public class MainView extends BorderPane {
             new SimpleStringProperty(String.valueOf(data.getValue().getUeberfaelligeTage())));
 
         ueberfaelligTabelle.getColumns().addAll(gegenstandCol, ausleiherCol, faelligCol, tageCol);
-
-        // Daten laden
-        List<Ausleihe> ueberfaellige = ausleiheService.ueberfaelligeAusleihen();
-        ueberfaelligTabelle.setItems(FXCollections.observableArrayList(ueberfaellige));
 
         pane.getChildren().addAll(titleLabel, ueberfaelligTabelle);
         VBox.setVgrow(ueberfaelligTabelle, Priority.ALWAYS);
@@ -622,6 +611,25 @@ public class MainView extends BorderPane {
         gegenstaendeTabelle.setItems(FXCollections.observableArrayList(gegenstandService.alleGegenstaende()));
         ausleiherTabelle.setItems(FXCollections.observableArrayList(ausleiherService.alleAusleiher()));
         ausleihenTabelle.setItems(FXCollections.observableArrayList(ausleiheService.aktiveAusleihen()));
+        refreshDashboard();
+        refreshUeberfaellig();
+    }
+
+    private void refreshDashboard() {
+        if (dashboardStatsBox != null) {
+            dashboardStatsBox.getChildren().setAll(
+                createStatCard("Gegenstände", String.valueOf(gegenstandService.zaehleAlle()), "#4CAF50"),
+                createStatCard("Verfügbar", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.VERFUEGBAR)), "#2196F3"),
+                createStatCard("Ausgeliehen", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.AUSGELIEHEN)), "#FF9800"),
+                createStatCard("Überfällig", String.valueOf(ausleiheService.zaehleUeberfaellige()), "#f44336")
+            );
+        }
+    }
+
+    private void refreshUeberfaellig() {
+        if (ueberfaelligTabelle != null) {
+            ueberfaelligTabelle.setItems(FXCollections.observableArrayList(ausleiheService.ueberfaelligeAusleihen()));
+        }
     }
 
     private void setStatus(String message) {
