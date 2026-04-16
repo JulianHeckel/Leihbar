@@ -275,7 +275,16 @@ public class MainView extends BorderPane {
             }
         });
 
-        contextMenu.getItems().addAll(inWartungItem, wartungBeendenItem,
+        MenuItem bearbeitenItem = new MenuItem("Bearbeiten");
+        bearbeitenItem.setOnAction(e -> {
+            Gegenstand selected = gegenstaendeTabelle.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                showGegenstandDialog(selected);
+            }
+        });
+
+        contextMenu.getItems().addAll(bearbeitenItem, new SeparatorMenuItem(),
+            inWartungItem, wartungBeendenItem,
             new SeparatorMenuItem(), ausmusternItem, loeschenItem);
 
         // Kontextmenü dynamisch anpassen basierend auf Status
@@ -283,6 +292,7 @@ public class MainView extends BorderPane {
             Gegenstand selected = gegenstaendeTabelle.getSelectionModel().getSelectedItem();
             if (selected != null) {
                 VerfuegbarkeitsStatus status = selected.getStatus();
+                bearbeitenItem.setDisable(status == VerfuegbarkeitsStatus.AUSGEMUSTERT);
                 inWartungItem.setDisable(status != VerfuegbarkeitsStatus.VERFUEGBAR);
                 wartungBeendenItem.setDisable(status != VerfuegbarkeitsStatus.IN_WARTUNG);
                 ausmusternItem.setDisable(status == VerfuegbarkeitsStatus.AUSGELIEHEN ||
@@ -292,6 +302,16 @@ public class MainView extends BorderPane {
         });
 
         gegenstaendeTabelle.setContextMenu(contextMenu);
+
+        // Doppelklick zum Bearbeiten
+        gegenstaendeTabelle.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                Gegenstand selected = gegenstaendeTabelle.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    showGegenstandDialog(selected);
+                }
+            }
+        });
 
         pane.getChildren().addAll(toolbar, gegenstaendeTabelle);
         VBox.setVgrow(gegenstaendeTabelle, Priority.ALWAYS);
@@ -380,7 +400,15 @@ public class MainView extends BorderPane {
         statusCol.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getStatus().getBezeichnung()));
 
-        ausleihenTabelle.getColumns().addAll(gegenstandCol, ausleiherCol, vonCol, bisCol, statusCol);
+        TableColumn<Ausleihe, String> zustandsberichtCol = new TableColumn<>("Zustandsbericht");
+        zustandsberichtCol.setCellValueFactory(data ->
+            new SimpleStringProperty(
+                data.getValue().getZustandsbericht() != null
+                    ? data.getValue().getZustandsbericht()
+                    : "-"
+            ));
+
+        ausleihenTabelle.getColumns().addAll(gegenstandCol, ausleiherCol, vonCol, bisCol, statusCol, zustandsberichtCol);
 
         pane.getChildren().addAll(toolbar, ausleihenTabelle);
         VBox.setVgrow(ausleihenTabelle, Priority.ALWAYS);
@@ -442,6 +470,14 @@ public class MainView extends BorderPane {
         kategorieField.setPromptText("Kategorie");
         Spinner<Integer> maxTageSpinner = new Spinner<>(1, 365, 14);
 
+        // Felder vorbelegen bei Bearbeitung
+        if (existing != null) {
+            nameField.setText(existing.getName());
+            beschreibungField.setText(existing.getBeschreibung());
+            kategorieField.setText(existing.getKategorie().getName());
+            maxTageSpinner.getValueFactory().setValue(existing.getKategorie().getMaxAusleihdauerTage());
+        }
+
         grid.add(new Label("Name:"), 0, 0);
         grid.add(nameField, 1, 0);
         grid.add(new Label("Beschreibung:"), 0, 1);
@@ -458,11 +494,20 @@ public class MainView extends BorderPane {
             if (button == ButtonType.OK) {
                 try {
                     Kategorie kategorie = Kategorie.of(kategorieField.getText(), maxTageSpinner.getValue());
-                    return gegenstandService.gegenstandAnlegen(
-                        nameField.getText(),
-                        beschreibungField.getText(),
-                        kategorie
-                    );
+                    if (existing != null) {
+                        return gegenstandService.gegenstandAktualisieren(
+                            existing.getId(),
+                            nameField.getText(),
+                            beschreibungField.getText(),
+                            kategorie
+                        );
+                    } else {
+                        return gegenstandService.gegenstandAnlegen(
+                            nameField.getText(),
+                            beschreibungField.getText(),
+                            kategorie
+                        );
+                    }
                 } catch (IllegalArgumentException ex) {
                     showError("Ungültige Eingabe", ex.getMessage());
                     return null;
@@ -473,7 +518,9 @@ public class MainView extends BorderPane {
 
         dialog.showAndWait().ifPresent(g -> {
             refreshAllData();
-            setStatus("Gegenstand angelegt: " + g.getInventarNummer());
+            setStatus(existing != null
+                ? "Gegenstand aktualisiert: " + g.getInventarNummer()
+                : "Gegenstand angelegt: " + g.getInventarNummer());
         });
     }
 
