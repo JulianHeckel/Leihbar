@@ -474,15 +474,17 @@ public class MainView extends BorderPane {
         TextArea beschreibungField = new TextArea();
         beschreibungField.setPromptText("Beschreibung");
         beschreibungField.setPrefRowCount(3);
-        TextField kategorieField = new TextField();
-        kategorieField.setPromptText("Kategorie");
+        ComboBox<String> kategorieCombo = new ComboBox<>();
+        kategorieCombo.setEditable(true);
+        kategorieCombo.getItems().addAll(gegenstandService.alleKategorienamen());
+        kategorieCombo.setPromptText("Kategorie eingeben oder waehlen");
         Spinner<Integer> maxTageSpinner = new Spinner<>(1, 365, 14);
 
         // Felder vorbelegen bei Bearbeitung
         if (existing != null) {
             nameField.setText(existing.getName());
             beschreibungField.setText(existing.getBeschreibung());
-            kategorieField.setText(existing.getKategorie().getName());
+            kategorieCombo.setValue(existing.getKategorie().getName());
             maxTageSpinner.getValueFactory().setValue(existing.getKategorie().getMaxAusleihdauerTage());
         }
 
@@ -491,7 +493,7 @@ public class MainView extends BorderPane {
         grid.add(new Label("Beschreibung:"), 0, 1);
         grid.add(beschreibungField, 1, 1);
         grid.add(new Label("Kategorie:"), 0, 2);
-        grid.add(kategorieField, 1, 2);
+        grid.add(kategorieCombo, 1, 2);
         grid.add(new Label("Max. Ausleihtage:"), 0, 3);
         grid.add(maxTageSpinner, 1, 3);
 
@@ -501,7 +503,7 @@ public class MainView extends BorderPane {
         dialog.setResultConverter(button -> {
             if (button == ButtonType.OK) {
                 try {
-                    Kategorie kategorie = Kategorie.of(kategorieField.getText(), maxTageSpinner.getValue());
+                    Kategorie kategorie = Kategorie.of(kategorieCombo.getEditor().getText(), maxTageSpinner.getValue());
                     if (existing != null) {
                         return gegenstandService.gegenstandAktualisieren(
                             existing.getId(),

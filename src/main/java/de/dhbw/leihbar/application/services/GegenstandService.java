@@ -182,6 +182,13 @@ public class GegenstandService {
     /**
      * Zählt alle Gegenstände.
      */
+    /**
+     * Gibt alle verwendeten Kategorienamen zurück (für Vorschläge im UI).
+     */
+    public List<String> alleKategorienamen() {
+        return gegenstandRepository.findeAlleKategorienamen();
+    }
+
     public long zaehleAlle() {
         return gegenstandRepository.zaehleAlle();
     }

@@ -173,6 +173,15 @@ public class JpaGegenstandRepository implements GegenstandRepository {
     }
 
     @Override
+    public List<String> findeAlleKategorienamen() {
+        TypedQuery<String> query = entityManager.createQuery(
+            "SELECT DISTINCT g.kategorieName FROM GegenstandJpaEntity g ORDER BY g.kategorieName",
+            String.class
+        );
+        return query.getResultList();
+    }
+
+    @Override
     public long zaehleNachStatus(VerfuegbarkeitsStatus status) {
         TypedQuery<Long> query = entityManager.createQuery(
             "SELECT COUNT(g) FROM GegenstandJpaEntity g WHERE g.status = :status",

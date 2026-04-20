@@ -71,6 +71,11 @@ public interface GegenstandRepository {
     InventarNummer naechsteFreieInventarNummer();
 
     /**
+     * Gibt alle verwendeten Kategorienamen zurück.
+     */
+    List<String> findeAlleKategorienamen();
+
+    /**
      * Zählt alle Gegenstände.
      */
     long zaehleAlle();

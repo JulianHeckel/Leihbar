@@ -194,4 +194,19 @@ class GegenstandServiceTest {
         verify(gegenstandRepository).suche(captor.capture());
         assertEquals("Bohr", captor.getValue());
     }
+
+    @Test
+    @DisplayName("Sollte alle Kategorienamen zurückgeben")
+    void sollteAlleKategorienamenZurueckgeben() {
+        // Arrange
+        when(gegenstandRepository.findeAlleKategorienamen())
+            .thenReturn(List.of("Werkzeug", "Elektronik"));
+
+        // Act
+        List<String> namen = gegenstandService.alleKategorienamen();
+
+        // Assert
+        assertEquals(2, namen.size());
+        verify(gegenstandRepository).findeAlleKategorienamen();
+    }
 }
