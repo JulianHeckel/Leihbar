@@ -13,6 +13,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.Cursor;
 import javafx.scene.layout.*;
 import javafx.beans.property.SimpleStringProperty;
 
@@ -107,11 +108,12 @@ public class MainView extends BorderPane {
         return pane;
     }
 
-    private VBox createStatCard(String title, String value, String color) {
+    private VBox createStatCard(String title, String value, String color, int targetTabIndex) {
         VBox card = new VBox(5);
         card.setPadding(new Insets(15));
         card.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 5;");
         card.setPrefWidth(150);
+        card.setCursor(Cursor.HAND);
 
         Label titleLbl = new Label(title);
         titleLbl.setStyle("-fx-text-fill: white; -fx-font-size: 14px;");
@@ -120,6 +122,12 @@ public class MainView extends BorderPane {
         valueLbl.setStyle("-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;");
 
         card.getChildren().addAll(titleLbl, valueLbl);
+
+        // Klick navigiert zum entsprechenden Tab
+        if (targetTabIndex >= 0) {
+            card.setOnMouseClicked(e -> tabPane.getSelectionModel().select(targetTabIndex));
+        }
+
         return card;
     }
 
@@ -665,10 +673,11 @@ public class MainView extends BorderPane {
     private void refreshDashboard() {
         if (dashboardStatsBox != null) {
             dashboardStatsBox.getChildren().setAll(
-                createStatCard("Gegenstände", String.valueOf(gegenstandService.zaehleAlle()), "#4CAF50"),
-                createStatCard("Verfügbar", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.VERFUEGBAR)), "#2196F3"),
-                createStatCard("Ausgeliehen", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.AUSGELIEHEN)), "#FF9800"),
-                createStatCard("Überfällig", String.valueOf(ausleiheService.zaehleUeberfaellige()), "#f44336")
+                createStatCard("Gegenstände", String.valueOf(gegenstandService.zaehleAlle()), "#4CAF50", 1),
+                createStatCard("Verfügbar", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.VERFUEGBAR)), "#2196F3", 1),
+                createStatCard("Ausgeliehen", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.AUSGELIEHEN)), "#FF9800", 3),
+                createStatCard("In Wartung", String.valueOf(gegenstandService.zaehleNachStatus(VerfuegbarkeitsStatus.IN_WARTUNG)), "#9C27B0", 1),
+                createStatCard("Überfällig", String.valueOf(ausleiheService.zaehleUeberfaellige()), "#f44336", 4)
             );
         }
     }
