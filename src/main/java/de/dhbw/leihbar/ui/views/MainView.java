@@ -138,6 +138,7 @@ public class MainView extends BorderPane {
         // Toolbar
         HBox toolbar = new HBox(10);
         Button addButton = new Button("Neuer Gegenstand");
+        addButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
         addButton.setOnAction(e -> showGegenstandDialog(null));
 
         TextField searchField = new TextField();
@@ -206,6 +207,24 @@ public class MainView extends BorderPane {
             new SimpleStringProperty(data.getValue().getStatus().getBezeichnung()));
 
         gegenstaendeTabelle.getColumns().addAll(invNrCol, nameCol, kategorieCol, statusCol);
+
+        // Farbliche Hervorhebung nach Status
+        gegenstaendeTabelle.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Gegenstand item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setStyle("");
+                } else {
+                    switch (item.getStatus()) {
+                        case VERFUEGBAR -> setStyle("-fx-background-color: #E8F5E9;");
+                        case AUSGELIEHEN -> setStyle("-fx-background-color: #FFF3E0;");
+                        case IN_WARTUNG -> setStyle("-fx-background-color: #F3E5F5;");
+                        case AUSGEMUSTERT -> setStyle("-fx-background-color: #EFEBE9;");
+                    }
+                }
+            }
+        });
 
         // Kontextmenü für Statusänderungen
         ContextMenu contextMenu = new ContextMenu();
@@ -370,8 +389,10 @@ public class MainView extends BorderPane {
         // Toolbar
         HBox toolbar = new HBox(10);
         Button addButton = new Button("Neue Ausleihe");
+        addButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
         addButton.setOnAction(e -> showAusleiheDialog());
         Button returnButton = new Button("Rückgabe");
+        returnButton.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white;");
         returnButton.setOnAction(e -> {
             Ausleihe selected = ausleihenTabelle.getSelectionModel().getSelectedItem();
             if (selected != null && selected.istAktiv()) {
@@ -417,6 +438,24 @@ public class MainView extends BorderPane {
             ));
 
         ausleihenTabelle.getColumns().addAll(gegenstandCol, ausleiherCol, vonCol, bisCol, statusCol, zustandsberichtCol);
+
+        // Farbliche Hervorhebung nach Ausleihe-Status
+        ausleihenTabelle.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Ausleihe item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setStyle("");
+                } else {
+                    switch (item.getStatus()) {
+                        case AKTIV -> setStyle("-fx-background-color: #E8F5E9;");
+                        case UEBERFAELLIG -> setStyle("-fx-background-color: #FFEBEE;");
+                        case ZURUECKGEGEBEN -> setStyle("-fx-background-color: #F5F5F5;");
+                        case STORNIERT -> setStyle("-fx-background-color: #ECEFF1;");
+                    }
+                }
+            }
+        });
 
         pane.getChildren().addAll(toolbar, ausleihenTabelle);
         VBox.setVgrow(ausleihenTabelle, Priority.ALWAYS);
@@ -687,6 +726,13 @@ public class MainView extends BorderPane {
     private void refreshUeberfaellig() {
         if (ueberfaelligTabelle != null) {
             ueberfaelligTabelle.setItems(FXCollections.observableArrayList(ausleiheService.ueberfaelligeAusleihen()));
+        }
+    }
+
+    private <T> void mitAusgewaehltem(TableView<T> tabelle, java.util.function.Consumer<T> action) {
+        T selected = tabelle.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            action.accept(selected);
         }
     }
 
