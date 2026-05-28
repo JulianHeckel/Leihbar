@@ -17,30 +17,23 @@ import java.util.UUID;
  * JPA-Implementierung des GegenstandRepository.
  * Bildet die Schnittstelle zwischen Domain und Datenbank.
  */
-public class JpaGegenstandRepository implements GegenstandRepository {
-
-    private final EntityManager entityManager;
+public class JpaGegenstandRepository extends AbstractJpaRepository implements GegenstandRepository {
 
     public JpaGegenstandRepository(EntityManager entityManager) {
-        this.entityManager = entityManager;
+        super(entityManager);
     }
 
     @Override
     public Gegenstand speichern(Gegenstand gegenstand) {
         GegenstandJpaEntity entity = GegenstandJpaEntity.fromDomain(gegenstand);
 
-        entityManager.getTransaction().begin();
-        try {
+        inTransaction(() -> {
             if (entityManager.find(GegenstandJpaEntity.class, entity.getId()) != null) {
                 entityManager.merge(entity);
             } else {
                 entityManager.persist(entity);
             }
-            entityManager.getTransaction().commit();
-        } catch (Exception e) {
-            entityManager.getTransaction().rollback();
-            throw e;
-        }
+        });
 
         return gegenstand;
     }
@@ -123,17 +116,12 @@ public class JpaGegenstandRepository implements GegenstandRepository {
 
     @Override
     public void loeschen(UUID id) {
-        entityManager.getTransaction().begin();
-        try {
+        inTransaction(() -> {
             GegenstandJpaEntity entity = entityManager.find(GegenstandJpaEntity.class, id);
             if (entity != null) {
                 entityManager.remove(entity);
             }
-            entityManager.getTransaction().commit();
-        } catch (Exception e) {
-            entityManager.getTransaction().rollback();
-            throw e;
-        }
+        });
     }
 
     @Override
@@ -148,19 +136,21 @@ public class JpaGegenstandRepository implements GegenstandRepository {
 
     @Override
     public InventarNummer naechsteFreieInventarNummer() {
+        // Bewusst numerisch über den extrahierten Zahlteil bestimmt, nicht über
+        // eine lexikografische Sortierung der Strings: Letztere wäre nur bei
+        // konstanter Stellenzahl (INV-0001) korrekt und würde bei einem späteren
+        // Formatwechsel (z.B. fünfstellig) stillschweigend falsche Werte liefern.
         TypedQuery<String> query = entityManager.createQuery(
-            "SELECT g.inventarNummer FROM GegenstandJpaEntity g ORDER BY g.inventarNummer DESC",
+            "SELECT g.inventarNummer FROM GegenstandJpaEntity g",
             String.class
         );
-        query.setMaxResults(1);
 
-        List<String> results = query.getResultList();
-        if (results.isEmpty()) {
-            return InventarNummer.of(1);
-        }
+        int hoechste = query.getResultList().stream()
+            .mapToInt(wert -> InventarNummer.of(wert).getNumericPart())
+            .max()
+            .orElse(0);
 
-        InventarNummer letzte = InventarNummer.of(results.get(0));
-        return InventarNummer.of(letzte.getNumericPart() + 1);
+        return InventarNummer.of(hoechste + 1);
     }
 
     @Override

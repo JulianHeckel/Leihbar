@@ -13,30 +13,23 @@ import java.util.UUID;
 /**
  * JPA-Implementierung des AusleiherRepository.
  */
-public class JpaAusleiherRepository implements AusleiherRepository {
-
-    private final EntityManager entityManager;
+public class JpaAusleiherRepository extends AbstractJpaRepository implements AusleiherRepository {
 
     public JpaAusleiherRepository(EntityManager entityManager) {
-        this.entityManager = entityManager;
+        super(entityManager);
     }
 
     @Override
     public Ausleiher speichern(Ausleiher ausleiher) {
         AusleiherJpaEntity entity = AusleiherJpaEntity.fromDomain(ausleiher);
 
-        entityManager.getTransaction().begin();
-        try {
+        inTransaction(() -> {
             if (entityManager.find(AusleiherJpaEntity.class, entity.getId()) != null) {
                 entityManager.merge(entity);
             } else {
                 entityManager.persist(entity);
             }
-            entityManager.getTransaction().commit();
-        } catch (Exception e) {
-            entityManager.getTransaction().rollback();
-            throw e;
-        }
+        });
 
         return ausleiher;
     }
@@ -91,17 +84,12 @@ public class JpaAusleiherRepository implements AusleiherRepository {
 
     @Override
     public void loeschen(UUID id) {
-        entityManager.getTransaction().begin();
-        try {
+        inTransaction(() -> {
             AusleiherJpaEntity entity = entityManager.find(AusleiherJpaEntity.class, id);
             if (entity != null) {
                 entityManager.remove(entity);
             }
-            entityManager.getTransaction().commit();
-        } catch (Exception e) {
-            entityManager.getTransaction().rollback();
-            throw e;
-        }
+        });
     }
 
     @Override

@@ -3,6 +3,7 @@ package de.dhbw.leihbar;
 import de.dhbw.leihbar.application.services.AusleiheService;
 import de.dhbw.leihbar.application.services.AusleiherService;
 import de.dhbw.leihbar.application.services.GegenstandService;
+import de.dhbw.leihbar.application.services.TransactionRunner;
 import de.dhbw.leihbar.domain.repositories.AusleiheRepository;
 import de.dhbw.leihbar.domain.repositories.AusleiherRepository;
 import de.dhbw.leihbar.domain.repositories.GegenstandRepository;
@@ -10,6 +11,7 @@ import de.dhbw.leihbar.domain.services.VerfuegbarkeitService;
 import de.dhbw.leihbar.infrastructure.persistence.JpaAusleiheRepository;
 import de.dhbw.leihbar.infrastructure.persistence.JpaAusleiherRepository;
 import de.dhbw.leihbar.infrastructure.persistence.JpaGegenstandRepository;
+import de.dhbw.leihbar.infrastructure.persistence.JpaTransactionRunner;
 import de.dhbw.leihbar.ui.views.MainView;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -58,6 +60,9 @@ public class LeihBarApplication extends Application {
         // Domain Services erstellen
         VerfuegbarkeitService verfuegbarkeitService = new VerfuegbarkeitService(ausleiheRepository);
 
+        // Transaktionssteuerung (teilt sich den EntityManager mit den Repositories)
+        TransactionRunner transactionRunner = new JpaTransactionRunner(entityManager);
+
         // Application Services erstellen
         gegenstandService = new GegenstandService(gegenstandRepository);
         ausleiherService = new AusleiherService(ausleiherRepository);
@@ -65,7 +70,8 @@ public class LeihBarApplication extends Application {
             ausleiheRepository,
             gegenstandRepository,
             ausleiherRepository,
-            verfuegbarkeitService
+            verfuegbarkeitService,
+            transactionRunner
         );
 
         logger.info("Services erfolgreich initialisiert");

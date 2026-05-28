@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,6 +46,9 @@ class AusleiheServiceTest {
     @Mock
     private VerfuegbarkeitService verfuegbarkeitService;
 
+    @Mock
+    private TransactionRunner transactionRunner;
+
     private AusleiheService ausleiheService;
     private Gegenstand gegenstand;
     private Ausleiher ausleiher;
@@ -58,8 +62,15 @@ class AusleiheServiceTest {
             ausleiheRepository,
             gegenstandRepository,
             ausleiherRepository,
-            verfuegbarkeitService
+            verfuegbarkeitService,
+            transactionRunner
         );
+
+        // Der TransactionRunner führt im Test die übergebene Arbeit direkt aus.
+        // lenient(), weil die Fehler-Pfade (Gegenstand/Ausleiher fehlt, nicht
+        // verfügbar) die Transaktionsklammer gar nicht erreichen.
+        lenient().when(transactionRunner.execute(any(Supplier.class)))
+            .thenAnswer(invocation -> ((Supplier<?>) invocation.getArgument(0)).get());
 
         werkzeug = Kategorie.of("Werkzeug", 30);
         gegenstand = Gegenstand.neu(

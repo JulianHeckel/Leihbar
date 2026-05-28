@@ -29,15 +29,18 @@ public class AusleiheService {
     private final GegenstandRepository gegenstandRepository;
     private final AusleiherRepository ausleiherRepository;
     private final VerfuegbarkeitService verfuegbarkeitService;
+    private final TransactionRunner transactionRunner;
 
     public AusleiheService(AusleiheRepository ausleiheRepository,
                           GegenstandRepository gegenstandRepository,
                           AusleiherRepository ausleiherRepository,
-                          VerfuegbarkeitService verfuegbarkeitService) {
+                          VerfuegbarkeitService verfuegbarkeitService,
+                          TransactionRunner transactionRunner) {
         this.ausleiheRepository = Objects.requireNonNull(ausleiheRepository);
         this.gegenstandRepository = Objects.requireNonNull(gegenstandRepository);
         this.ausleiherRepository = Objects.requireNonNull(ausleiherRepository);
         this.verfuegbarkeitService = Objects.requireNonNull(verfuegbarkeitService);
+        this.transactionRunner = Objects.requireNonNull(transactionRunner);
     }
 
     /**
@@ -79,12 +82,14 @@ public class AusleiheService {
             .zeitraum(zeitraum)
             .build();
 
-        // Aktualisiere Gegenstand-Status
-        gegenstand.ausleihen();
-        gegenstandRepository.speichern(gegenstand);
-
-        // Speichere Ausleihe
-        Ausleihe gespeichert = ausleiheRepository.speichern(ausleihe);
+        // Gegenstand-Status und Ausleihe atomar speichern: Schlägt das
+        // Speichern der Ausleihe fehl, darf der Gegenstand nicht ausgeliehen
+        // markiert bleiben. Beide Schreibvorgänge laufen in einer Transaktion.
+        Ausleihe gespeichert = transactionRunner.execute(() -> {
+            gegenstand.ausleihen();
+            gegenstandRepository.speichern(gegenstand);
+            return ausleiheRepository.speichern(ausleihe);
+        });
 
         logger.info("Ausleihe erfolgreich erstellt: {}", gespeichert.getId());
         return gespeichert;
@@ -109,16 +114,16 @@ public class AusleiheService {
             );
         }
 
-        // Aktualisiere Gegenstand-Status
+        // Gegenstand laden, dessen Status und die Ausleihe atomar aktualisieren
         Gegenstand gegenstand = gegenstandRepository.findeNachId(ausleihe.getGegenstandId())
             .orElseThrow(() -> new IllegalStateException("Gegenstand nicht gefunden"));
 
-        gegenstand.zurueckgeben();
-        gegenstandRepository.speichern(gegenstand);
-
-        // Aktualisiere Ausleihe
-        ausleihe.zurueckgeben(zustandsbericht);
-        Ausleihe aktualisiert = ausleiheRepository.speichern(ausleihe);
+        Ausleihe aktualisiert = transactionRunner.execute(() -> {
+            gegenstand.zurueckgeben();
+            gegenstandRepository.speichern(gegenstand);
+            ausleihe.zurueckgeben(zustandsbericht);
+            return ausleiheRepository.speichern(ausleihe);
+        });
 
         logger.info("Rückgabe erfolgreich erfasst für Ausleihe: {}", ausleiheId);
         return aktualisiert;
@@ -139,16 +144,16 @@ public class AusleiheService {
             );
         }
 
-        // Aktualisiere Gegenstand-Status
+        // Gegenstand laden, freigeben und Stornierung atomar speichern
         Gegenstand gegenstand = gegenstandRepository.findeNachId(ausleihe.getGegenstandId())
             .orElseThrow(() -> new IllegalStateException("Gegenstand nicht gefunden"));
 
-        gegenstand.zurueckgeben();
-        gegenstandRepository.speichern(gegenstand);
-
-        // Storniere Ausleihe
-        ausleihe.stornieren();
-        return ausleiheRepository.speichern(ausleihe);
+        return transactionRunner.execute(() -> {
+            gegenstand.zurueckgeben();
+            gegenstandRepository.speichern(gegenstand);
+            ausleihe.stornieren();
+            return ausleiheRepository.speichern(ausleihe);
+        });
     }
 
     /**
