@@ -20,6 +20,9 @@ import javafx.beans.property.SimpleStringProperty;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Hauptansicht der LeihBar-Anwendung.
@@ -41,6 +44,11 @@ public class MainView extends BorderPane {
     private TableView<Ausleihe> ueberfaelligTabelle;
     private HBox dashboardStatsBox;
     private Label statusLabel;
+
+    // Lookup-Caches: vermeiden eine DB-Abfrage pro Tabellenzeile (N+1).
+    // Werden in refreshAllData() einmal befüllt und von den Ausleihen-Spalten gelesen.
+    private Map<UUID, String> gegenstandNamen = Map.of();
+    private Map<UUID, String> ausleiherNamen = Map.of();
 
     public MainView(GegenstandService gegenstandService,
                    AusleiherService ausleiherService,
@@ -406,16 +414,12 @@ public class MainView extends BorderPane {
         ausleihenTabelle.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         TableColumn<Ausleihe, String> gegenstandCol = new TableColumn<>("Gegenstand");
-        gegenstandCol.setCellValueFactory(data -> {
-            var gegenstand = gegenstandService.findeGegenstand(data.getValue().getGegenstandId());
-            return new SimpleStringProperty(gegenstand.map(Gegenstand::getName).orElse("Unbekannt"));
-        });
+        gegenstandCol.setCellValueFactory(data -> new SimpleStringProperty(
+            gegenstandNamen.getOrDefault(data.getValue().getGegenstandId(), "Unbekannt")));
 
         TableColumn<Ausleihe, String> ausleiherCol = new TableColumn<>("Ausleiher");
-        ausleiherCol.setCellValueFactory(data -> {
-            var ausleiher = ausleiherService.findeAusleiher(data.getValue().getAusleiherId());
-            return new SimpleStringProperty(ausleiher.map(Ausleiher::getVollerName).orElse("Unbekannt"));
-        });
+        ausleiherCol.setCellValueFactory(data -> new SimpleStringProperty(
+            ausleiherNamen.getOrDefault(data.getValue().getAusleiherId(), "Unbekannt")));
 
         TableColumn<Ausleihe, String> vonCol = new TableColumn<>("Von");
         vonCol.setCellValueFactory(data ->
@@ -473,16 +477,12 @@ public class MainView extends BorderPane {
         ueberfaelligTabelle.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         TableColumn<Ausleihe, String> gegenstandCol = new TableColumn<>("Gegenstand");
-        gegenstandCol.setCellValueFactory(data -> {
-            var gegenstand = gegenstandService.findeGegenstand(data.getValue().getGegenstandId());
-            return new SimpleStringProperty(gegenstand.map(Gegenstand::getName).orElse("Unbekannt"));
-        });
+        gegenstandCol.setCellValueFactory(data -> new SimpleStringProperty(
+            gegenstandNamen.getOrDefault(data.getValue().getGegenstandId(), "Unbekannt")));
 
         TableColumn<Ausleihe, String> ausleiherCol = new TableColumn<>("Ausleiher");
-        ausleiherCol.setCellValueFactory(data -> {
-            var ausleiher = ausleiherService.findeAusleiher(data.getValue().getAusleiherId());
-            return new SimpleStringProperty(ausleiher.map(Ausleiher::getVollerName).orElse("Unbekannt"));
-        });
+        ausleiherCol.setCellValueFactory(data -> new SimpleStringProperty(
+            ausleiherNamen.getOrDefault(data.getValue().getAusleiherId(), "Unbekannt")));
 
         TableColumn<Ausleihe, String> faelligCol = new TableColumn<>("Fällig seit");
         faelligCol.setCellValueFactory(data ->
@@ -704,8 +704,18 @@ public class MainView extends BorderPane {
     }
 
     private void refreshAllData() {
-        gegenstaendeTabelle.setItems(FXCollections.observableArrayList(gegenstandService.alleGegenstaende()));
-        ausleiherTabelle.setItems(FXCollections.observableArrayList(ausleiherService.alleAusleiher()));
+        // Stammdaten einmal laden und sowohl für die Tabellen als auch für die
+        // Namens-Lookups der Ausleihen-Spalten wiederverwenden.
+        List<Gegenstand> gegenstaende = gegenstandService.alleGegenstaende();
+        List<Ausleiher> ausleiher = ausleiherService.alleAusleiher();
+
+        gegenstandNamen = gegenstaende.stream()
+            .collect(Collectors.toMap(Gegenstand::getId, Gegenstand::getName));
+        ausleiherNamen = ausleiher.stream()
+            .collect(Collectors.toMap(Ausleiher::getId, Ausleiher::getVollerName));
+
+        gegenstaendeTabelle.setItems(FXCollections.observableArrayList(gegenstaende));
+        ausleiherTabelle.setItems(FXCollections.observableArrayList(ausleiher));
         ausleihenTabelle.setItems(FXCollections.observableArrayList(ausleiheService.aktiveAusleihen()));
         refreshDashboard();
         refreshUeberfaellig();
