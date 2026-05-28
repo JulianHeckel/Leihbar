@@ -38,7 +38,31 @@ public class Ausleiher {
         return vorname;
     }
 
-    public void setVorname(String vorname) {
+    public String getNachname() {
+        return nachname;
+    }
+
+    public Kontaktdaten getKontaktdaten() {
+        return kontaktdaten;
+    }
+
+    /**
+     * Benennt den Ausleiher um (z.B. nach Heirat).
+     * Die Identität (id) bleibt dabei unverändert.
+     */
+    public void umbenennen(String vorname, String nachname) {
+        setVorname(vorname);
+        setNachname(nachname);
+    }
+
+    /**
+     * Aktualisiert die Kontaktdaten des Ausleihers.
+     */
+    public void kontaktdatenAendern(Kontaktdaten kontaktdaten) {
+        setKontaktdaten(kontaktdaten);
+    }
+
+    private void setVorname(String vorname) {
         Objects.requireNonNull(vorname, "Vorname darf nicht null sein");
         String normalized = vorname.trim();
         if (normalized.isEmpty()) {
@@ -50,11 +74,7 @@ public class Ausleiher {
         this.vorname = normalized;
     }
 
-    public String getNachname() {
-        return nachname;
-    }
-
-    public void setNachname(String nachname) {
+    private void setNachname(String nachname) {
         Objects.requireNonNull(nachname, "Nachname darf nicht null sein");
         String normalized = nachname.trim();
         if (normalized.isEmpty()) {
@@ -66,11 +86,7 @@ public class Ausleiher {
         this.nachname = normalized;
     }
 
-    public Kontaktdaten getKontaktdaten() {
-        return kontaktdaten;
-    }
-
-    public void setKontaktdaten(Kontaktdaten kontaktdaten) {
+    private void setKontaktdaten(Kontaktdaten kontaktdaten) {
         this.kontaktdaten = Objects.requireNonNull(kontaktdaten, "Kontaktdaten dürfen nicht null sein");
     }
 

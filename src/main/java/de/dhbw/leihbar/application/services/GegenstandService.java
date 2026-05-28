@@ -74,9 +74,7 @@ public class GegenstandService {
         Gegenstand gegenstand = gegenstandRepository.findeNachId(id)
             .orElseThrow(() -> new IllegalArgumentException("Gegenstand nicht gefunden: " + id));
 
-        gegenstand.setName(name);
-        gegenstand.setBeschreibung(beschreibung);
-        gegenstand.setKategorie(kategorie);
+        gegenstand.aktualisiereStammdaten(name, beschreibung, kategorie);
 
         return gegenstandRepository.speichern(gegenstand);
     }

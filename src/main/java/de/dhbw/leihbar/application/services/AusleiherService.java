@@ -63,13 +63,12 @@ public class AusleiherService {
             }
         }
 
-        ausleiher.setVorname(vorname);
-        ausleiher.setNachname(nachname);
+        ausleiher.umbenennen(vorname, nachname);
 
         Kontaktdaten kontaktdaten = telefon != null && !telefon.isBlank()
             ? Kontaktdaten.of(email, telefon)
             : Kontaktdaten.nurEmail(email);
-        ausleiher.setKontaktdaten(kontaktdaten);
+        ausleiher.kontaktdatenAendern(kontaktdaten);
 
         return ausleiherRepository.speichern(ausleiher);
     }

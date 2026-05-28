@@ -50,7 +50,27 @@ public class Gegenstand {
         return name;
     }
 
-    public void setName(String name) {
+    public String getBeschreibung() {
+        return beschreibung;
+    }
+
+    public Kategorie getKategorie() {
+        return kategorie;
+    }
+
+    /**
+     * Aktualisiert die Stammdaten des Gegenstandes in einem Schritt.
+     * Alle Argumente werden geprüft, bevor das erste Feld geändert wird;
+     * bei einem ungültigen Wert bleibt der Gegenstand daher unverändert.
+     */
+    public void aktualisiereStammdaten(String name, String beschreibung, Kategorie kategorie) {
+        Objects.requireNonNull(kategorie, "Kategorie darf nicht null sein");
+        setName(name);              // validiert den Namen und wirft ggf., bevor weitere Felder geändert werden
+        setBeschreibung(beschreibung);
+        this.kategorie = kategorie;
+    }
+
+    private void setName(String name) {
         Objects.requireNonNull(name, "Name darf nicht null sein");
         String normalized = name.trim();
         if (normalized.isEmpty()) {
@@ -62,20 +82,8 @@ public class Gegenstand {
         this.name = normalized;
     }
 
-    public String getBeschreibung() {
-        return beschreibung;
-    }
-
-    public void setBeschreibung(String beschreibung) {
+    private void setBeschreibung(String beschreibung) {
         this.beschreibung = beschreibung != null ? beschreibung.trim() : "";
-    }
-
-    public Kategorie getKategorie() {
-        return kategorie;
-    }
-
-    public void setKategorie(Kategorie kategorie) {
-        this.kategorie = Objects.requireNonNull(kategorie, "Kategorie darf nicht null sein");
     }
 
     public VerfuegbarkeitsStatus getStatus() {

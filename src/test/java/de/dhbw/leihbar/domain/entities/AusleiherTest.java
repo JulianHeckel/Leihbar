@@ -67,8 +67,7 @@ class AusleiherTest {
         Ausleiher ausleiher = Ausleiher.neu("Max", "Mustermann", kontakt);
 
         // Act
-        ausleiher.setVorname("Moritz");
-        ausleiher.setNachname("Meier");
+        ausleiher.umbenennen("Moritz", "Meier");
 
         // Assert
         assertEquals("Moritz", ausleiher.getVorname());
@@ -85,7 +84,7 @@ class AusleiherTest {
         Kontaktdaten neuerKontakt = Kontaktdaten.of("neu@example.com", "123456");
 
         // Act
-        ausleiher.setKontaktdaten(neuerKontakt);
+        ausleiher.kontaktdatenAendern(neuerKontakt);
 
         // Assert
         assertEquals(neuerKontakt, ausleiher.getKontaktdaten());

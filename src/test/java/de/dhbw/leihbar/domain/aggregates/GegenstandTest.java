@@ -149,14 +149,17 @@ class GegenstandTest {
     }
 
     @Test
-    @DisplayName("Sollte Name und Beschreibung ändern können")
-    void sollteNameUndBeschreibungAendernKoennen() {
+    @DisplayName("Sollte Stammdaten ändern können")
+    void sollteStammdatenAendernKoennen() {
+        // Arrange
+        Kategorie elektronik = Kategorie.of("Elektronik", 14);
+
         // Act
-        gegenstand.setName("Akkuschrauber");
-        gegenstand.setBeschreibung("Makita DDF484");
+        gegenstand.aktualisiereStammdaten("Akkuschrauber", "Makita DDF484", elektronik);
 
         // Assert
         assertEquals("Akkuschrauber", gegenstand.getName());
         assertEquals("Makita DDF484", gegenstand.getBeschreibung());
+        assertEquals(elektronik, gegenstand.getKategorie());
     }
 }
